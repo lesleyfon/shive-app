@@ -24,7 +24,7 @@ func MatchToUid(c *gin.Context, userId string) (err error) {
 
 	err = nil
 
-	if userId != uid {
+	if userType == "USER" && uid != userId {
 		err = errors.New("You are not authorised to access this!Unauthorized to access this resource")
 		return err
 
