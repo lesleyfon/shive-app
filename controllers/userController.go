@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"shive/database"
@@ -20,6 +21,7 @@ import (
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 var validate = validator.New()
 
+// The function `MaskPassword` generates a bcrypt hash from a given password.
 func MaskPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
@@ -134,4 +136,115 @@ func Signup() gin.HandlerFunc {
 			"Data":    map[string]interface{}{"data": result}})
 	}
 
+}
+
+func ConfirmPassword(userPassword string, passwordEntered string) (bool, string) {
+	err := bcrypt.CompareHashAndPassword([]byte(passwordEntered), []byte(userPassword))
+	check := true
+	msg := ""
+
+	if err != nil {
+		msg = fmt.Sprintf("Looks like you entered a wrong password")
+		check = false
+	}
+
+	return check, msg
+
+}
+
+func Login() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		var user models.User
+		var retrievedUser models.User
+
+		defer cancel()
+
+		// This block of code is attempting to bind the JSON data from the request body to the `user` struct.
+		// If there is an error during this process (e.g., the JSON data cannot be properly bound to the
+		// struct), it will return a response with a status code of `http.StatusInternalServerError` and a
+		// JSON object containing an error message indicating that the email or password is incorrect.
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "Your email or password is incorrect",
+				},
+			)
+		}
+
+		// This line of code is querying the `userCollection` (which is a MongoDB collection) to find a
+		// document that matches the specified filter criteria. In this case, it is looking for a document
+		// where the value of the "email" field matches the email provided in the `user` struct.
+		err := userCollection.FindOne(ctx, bson.M{
+			"email": user.Email,
+		}).Decode(
+			&retrievedUser,
+		)
+
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "Your email or password is incorrect",
+				},
+			)
+			return
+		}
+
+		passwordIsValid, msg := ConfirmPassword(*user.Password, *retrievedUser.Password)
+
+		defer cancel()
+		if !passwordIsValid {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": msg,
+				},
+			)
+		}
+
+		if retrievedUser.Email == nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "Oops account not found",
+				},
+			)
+		}
+
+		token, refreshedToken, _ := helper.GenerateAllTokens(
+			*user.Email,
+			*user.Name,
+			*user.Username,
+			*user.User_type,
+			*&user.User_id,
+		)
+
+		helper.UpdateTokens(token, refreshedToken, user.User_id)
+		err = userCollection.FindOne(
+			ctx,
+			bson.M{
+				"user_id": retrievedUser.User_id,
+			},
+		).Decode(&retrievedUser)
+
+		defer cancel()
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"error": err.Error(),
+				},
+			)
+			return
+		}
+
+		c.JSON(
+			http.StatusOK,
+			retrievedUser,
+		)
+	}
 }

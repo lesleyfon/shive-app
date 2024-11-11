@@ -7,5 +7,10 @@ import (
 )
 
 func AuthRoutes(router *gin.Engine) {
+
+	// Login
+	router.POST("/users/login", controllers.Login())
+
+	// Signup Route
 	router.POST("/users/signup", controllers.Signup())
 }
