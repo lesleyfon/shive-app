@@ -1,0 +1,57 @@
+#!/bin/bash
+clear
+# Start MongoDB and Go server
+mongod >/dev/null 2>&1 &
+sleep 5
+go run main.go >/dev/null 2>&1 &
+printf "Server starting...\n"
+
+# Read login cred from credentials.txt
+source testdata/loginCredentials.txt
+
+# Check if all required credentials are available
+if [[ -z "$name" || -z "$username" || -z "$password" || -z "$email" ]]; then
+   echo "Credentials are missing in loginCredentials.txt. Exiting."
+   exit 1
+fi
+
+# Perform login and save the response to credentials.txt
+value=$(curl -s --location --request POST 'http://localhost:9000/users/login' \
+   --header 'Content-Type: application/json' \
+   --data-raw "{
+    \"name\": \"$name\",
+    \"username\": \"$username\",
+    \"password\": \"$password\",
+    \"email\": \"$email\",
+    \"user_type\": \"ADMIN\"
+}") &>testdata/waste.txt
+
+echo "Login Response: $value"
+
+# Check if login was successful
+if [[ $(echo "$value" | jq -r '.token') != "null" ]]; then
+   printf "\nLogin Successful......\n"
+
+   # Extract token and user_id from response and save them to credentials.txt
+   token=$(echo "$value" | jq -r '.token')
+   id=$(echo "$value" | jq -r '.user_id')
+
+   # Save the token and user_id to a file
+   echo "token=$token" >testdata/credentials.txt
+   echo "user_id=$id" >>testdata/credentials.txt
+else
+   echo "Login failed. Exiting."
+   exit 1
+fi
+
+# Read token and user_id from credentials.txt
+source testdata/credentials.txt
+
+# Output the token and user_id from credentials file
+printf "\nNow passing fresh token and id of the user to fetch the details......\n"
+
+# Sending the GET request with the retrieved token and user_id
+printf "\nSending Request\n"
+curl -s --location --request GET "http://localhost:9000/users/${user_id}" \
+   --header "token: $token" \
+   --data-raw '' | jq
