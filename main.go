@@ -23,7 +23,7 @@ func main() {
 
 	// LOG Events
 	router.Use(gin.Logger())
-
+	println("hereeee")
 	// Register app routes
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)

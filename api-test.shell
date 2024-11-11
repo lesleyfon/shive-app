@@ -51,7 +51,17 @@ source testdata/credentials.txt
 printf "\nNow passing fresh token and id of the user to fetch the details......\n"
 
 # Sending the GET request with the retrieved token and user_id
-printf "\nSending Request\n"
+printf "\nSending Request- GET USER\n"
 curl -s --location --request GET "http://localhost:9000/users/${user_id}" \
    --header "token: $token" \
    --data-raw '' | jq
+
+printf "\nSending Request- GET ALL USER\n"
+value=$(curl -s --location --request GET 'http://localhost:9000/users' \
+   --header "token: $token" \
+   --data-raw '' | jq)
+
+echo "All Users $value"
+
+# Kill all running app instances - cleanup
+kill -9 $(lsof -i TCP:9000 | awk '/LISTEN/{print $2}')
