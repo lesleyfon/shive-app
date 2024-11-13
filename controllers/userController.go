@@ -52,6 +52,7 @@ func Signup() gin.HandlerFunc {
 		emailCount, emailErr := userCollection.CountDocuments(ctx, bson.M{"email": regexMatch})
 		usernameMatch := bson.M{"$regex": primitive.Regex{Pattern: *user.Username, Options: "i"}}
 		usernameCount, usernameErr := userCollection.CountDocuments(ctx, bson.M{"username": usernameMatch})
+
 		defer cancel()
 		if emailErr != nil {
 			log.Panic(emailErr)
@@ -370,5 +371,117 @@ func GetUsers() gin.HandlerFunc {
 			log.Fatal(err)
 		}
 		c.JSON(http.StatusOK, allusers[0])
+	}
+}
+
+func CreateUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		var user models.User
+
+		defer cancel()
+
+		err := userCollection.FindOne(ctx, bson.M{
+			"email": user.Email,
+		}).Decode(
+			&user,
+		)
+
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "An Error occurred",
+				},
+			)
+			return
+		}
+
+		if user.Email != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "User already Exist",
+				},
+			)
+		}
+		regexpMatch := bson.M{
+			"$regex": primitive.Regex{
+				Pattern: *user.Email,
+				Options: "i",
+			},
+		}
+		emailCount, emailErr := userCollection.CountDocuments(ctx, bson.M{"email": regexpMatch})
+		// nameMatch := bson.M{"$regex": primitive.Regex{
+		// 	Pattern: *user.Name,
+		// 	Options: "i",
+		// }}
+		// nameCount, nameCountErr := userCollection.CountDocuments(ctx, bson.M{
+		// 	"name": nameMatch,
+		// })
+
+		if emailErr != nil {
+			log.Panic(emailErr)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this email"})
+		}
+
+		if emailCount > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Looks like this email already exists", "count": emailCount})
+			return
+		}
+
+		// if nameCountErr != nil {
+		// 	log.Panic(nameCountErr)
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this name"})
+		// }
+
+		// if nameCount > 0 {
+		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Looks like this name already exists", "count": emailCount})
+		// 	return
+		// }
+		passwordHash := MaskPassword(*user.Password)
+		user.Password = &passwordHash
+
+		// Validator
+		validatorError := validate.Struct(&user)
+		if validatorError != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"Message": "Error",
+					"Data":    map[string]interface{}{"data": validatorError.Error()},
+				},
+			)
+		}
+
+		// Insert User
+		newUser := models.User{
+			ID:       user.ID,
+			Name:     user.Name,
+			Email:    user.Email,
+			Password: user.Password,
+			// Uncomment this
+			// Age:      user.Age,
+		}
+
+		result, err := userCollection.InsertOne(ctx, newUser)
+
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"Message": "error",
+					"Data":    map[string]interface{}{"data": validatorError.Error()},
+				},
+			)
+			return
+		}
+
+		c.JSON(
+			http.StatusCreated,
+			gin.H{
+				"Data": map[string]interface{}{"data": result},
+			},
+		)
 	}
 }
