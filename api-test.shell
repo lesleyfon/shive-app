@@ -65,3 +65,15 @@ echo "All Users $value"
 
 # Kill all running app instances - cleanup
 kill -9 $(lsof -i TCP:9000 | awk '/LISTEN/{print $2}')
+
+source testdata/genre.txt
+
+value=$(
+   curl -s --location --request POST 'http://localhost:9000/genres/creategenre' \
+      --header "token: $token" \
+      --data-raw "{
+         \"name\": \"$name\"
+      }"
+) &>testdata/waste.txt
+
+echo "New Genre Added $value"
