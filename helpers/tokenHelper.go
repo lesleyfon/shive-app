@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"shive/database"
@@ -85,18 +84,20 @@ func ValidateToken(signedToken string) (claims *JwtSignedDetails, msg string) {
 
 	if err != nil {
 		msg = err.Error()
+		return nil, msg
 	}
 
 	claims, ok := token.Claims.(*JwtSignedDetails)
 
 	if !ok {
-		msg = fmt.Sprintf("This token is incorrect. Sorry")
-		msg = err.Error()
+		msg = "This token is incorrect. Sorry"
+		return nil, msg
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		msg = fmt.Sprintf("Ooooops looks like your token has expired")
-		msg = err.Error()
+
+		msg = "Ooooops looks like your token has expired"
+		return nil, msg
 
 	}
 

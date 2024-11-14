@@ -12,7 +12,8 @@ func VerifyUserType(c *gin.Context, role string) (err error) {
 	err = nil
 
 	if userType != role {
-		err = errors.New("You Are Not Authorised to Access This!")
+		msg := "You Are Not Authorised to Access This!" + "role : " + role + ", userType : " + userType
+		err = errors.New(msg)
 		return err
 	}
 	return err
