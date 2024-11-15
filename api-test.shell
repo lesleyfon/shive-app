@@ -84,3 +84,13 @@ value=$(
 ) &>testdata/waste.txt
 
 echo "Get genre $value"
+
+echo "\nSending Fetch All Genres Request\n"
+
+value=$(
+   curl -s --location --request GEThttp://localhost:9000/genres \
+      --header "token: $token" \
+      --data-raw '' | jq
+)
+
+echo "Get All Genre $value"
