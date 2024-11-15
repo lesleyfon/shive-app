@@ -280,3 +280,93 @@ func GetAllGenres() gin.HandlerFunc {
 	}
 
 }
+
+func UpdateGenre() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userAuthErr := helpers.VerifyUserType(c, "ADMIN")
+
+		if userAuthErr != nil {
+			c.JSON(http.StatusUnauthorized,
+				gin.H{
+					"status":  http.StatusUnauthorized,
+					"error":   userAuthErr,
+					"message": "Unauthorized",
+				})
+			return
+		}
+
+		genreId := c.Param("genre_id")
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		var genre models.Genre
+		defer cancel()
+		//	Validate request body
+		err := c.BindJSON(&genre)
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status": http.StatusBadRequest,
+					"error":  err,
+				})
+			return
+		}
+		//use the validator library to validate required fields
+		validationErr := validate.Struct(&genre)
+		if validationErr != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"error":   validationErr,
+					"message": "Error validating request body",
+				})
+			return
+		}
+
+		update := bson.M{"name": genre.Name}
+		filterById := bson.M{"genre_id": genreId}
+
+		result, err := genreCollection.UpdateOne(
+			ctx,
+			filterById,
+			bson.M{"$set": update},
+		)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "Error updating genre",
+					"error":   err.Error(),
+				})
+			return
+		}
+
+		var updatedGenre models.Genre
+
+		if result.MatchedCount == 1 {
+			err := genreCollection.FindOne(ctx, filterById).Decode(&updatedGenre)
+
+			if err != nil {
+				c.JSON(
+					http.StatusInternalServerError,
+					gin.H{
+						"status":  http.StatusInternalServerError,
+						"error":   err,
+						"message": "Error Retrieving updated genre from collection",
+					})
+				return
+			}
+		}
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"Status":  http.StatusOK,
+				"Message": "success",
+				"Data":    updatedGenre,
+			},
+		)
+	}
+}

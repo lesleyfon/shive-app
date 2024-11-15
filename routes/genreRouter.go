@@ -26,4 +26,8 @@ func GenreRouter(router *gin.Engine) {
 		"/genres",
 		controller.GetAllGenres(),
 	)
+	router.PUT(
+		"genres/:genre_id",
+		controller.UpdateGenre(),
+	)
 }
