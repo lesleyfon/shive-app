@@ -34,11 +34,10 @@ func CreateGenre() gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"Status":  http.StatusBadRequest,
-				"Message": "error",
-				"Data": map[string]interface{}{
-					"data": err.Error(),
-				}})
+				"status":  http.StatusBadRequest,
+				"message": "error",
+				"error":   err.Error(),
+			})
 			return
 		}
 
@@ -54,11 +53,9 @@ func CreateGenre() gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"Status":  http.StatusBadRequest,
-				"Message": "error occured while checking for the genre name",
-				"Data": map[string]interface{}{
-					"data": err.Error(),
-				},
+				"status":  http.StatusBadRequest,
+				"message": "error occured while checking for the genre name",
+				"data":    err.Error(),
 			})
 			return
 		}
@@ -66,9 +63,9 @@ func CreateGenre() gin.HandlerFunc {
 			c.JSON(
 				http.StatusUnauthorized,
 				gin.H{
-					"Status": http.StatusUnauthorized,
-					"Error":  "this genre name already exists",
-					"Count":  count,
+					"status": http.StatusUnauthorized,
+					"error":  "this genre name already exists",
+					"count":  count,
 				},
 			)
 		}
@@ -77,18 +74,18 @@ func CreateGenre() gin.HandlerFunc {
 
 			c.JSON(http.StatusBadRequest,
 				gin.H{
-					"Status":  http.StatusBadRequest,
-					"Message": "error",
-					"Data": map[string]interface{}{
-						"data": validationError.Error(),
-					},
+					"status":  http.StatusBadRequest,
+					"message": "error",
+					"error":   validationError.Error(),
 				},
 			)
 			return
 		}
+		genre.Id = primitive.NewObjectID()
+		genre.Genre_id = genre.Id.Hex()
 
 		newGenre := models.Genre{
-			Id:         primitive.NewObjectID(),
+			Id:         genre.Id,
 			Name:       genre.Name,
 			Genre_id:   genre.Genre_id,
 			Created_at: time.Now(),
@@ -102,11 +99,9 @@ func CreateGenre() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"Status":  http.StatusBadRequest,
-					"Message": "error",
-					"Data": map[string]interface{}{
-						"data": err.Error(),
-					},
+					"status":  http.StatusBadRequest,
+					"message": "error",
+					"error":   err.Error(),
 				},
 			)
 			return
@@ -115,11 +110,49 @@ func CreateGenre() gin.HandlerFunc {
 		c.JSON(
 			http.StatusCreated,
 			gin.H{
-				"Status":  http.StatusCreated,
-				"Message": "genre created successfully",
-				"Data": map[string]interface{}{
-					"data": result,
+				"status":  http.StatusCreated,
+				"message": "genre created successfully",
+				"data":    result,
+			},
+		)
+	}
+}
+
+func GetGenre() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		var genre models.Genre
+
+		// Get genre Id from request url
+		genreId := c.Param("genre_id")
+
+		filter := bson.M{
+			"genre_id": genreId,
+		}
+
+		// Get item from collection
+		err := genreCollection.FindOne(ctx, filter).Decode(&genre)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "Error retrieving genre",
+					"error":   err.Error(),
 				},
+			)
+			return
+		}
+		c.JSON(
+			http.StatusAccepted,
+			gin.H{
+				"status": http.StatusAccepted,
+				"data":   genre,
 			},
 		)
 	}
