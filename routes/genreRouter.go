@@ -16,4 +16,9 @@ func GenreRouter(router *gin.Engine) {
 		"/genres/creategenre",
 		controller.CreateGenre(),
 	)
+
+	router.GET(
+		"/genres/:genre_id",
+		controller.GetGenre(),
+	)
 }
