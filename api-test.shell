@@ -77,3 +77,10 @@ value=$(
 ) &>testdata/waste.txt
 
 echo "New Genre Added $value"
+
+value=$(
+   curl -s --location --request 'http://localhost:9000/genres/6736ab542113e7ada30379a6' \
+      --header "token: $token"
+) &>testdata/waste.txt
+
+echo "Get genre $value"
