@@ -88,9 +88,20 @@ echo "Get genre $value"
 echo "\nSending Fetch All Genres Request\n"
 
 value=$(
-   curl -s --location --request GEThttp://localhost:9000/genres \
+   curl -s --location --request GET http://localhost:9000/genres \
       --header "token: $token" \
       --data-raw '' | jq
 )
 
 echo "Get All Genre $value"
+
+value=$(
+   curl --location --request PUT 'http://localhost:9000/genres/6736be9e1e8570f75e2b778f' \
+      --header "token: $token" \
+      --header 'Content-Type: application/json' \
+      --data '{
+    "name": "Science fiction"
+}'
+)
+
+echo "Update Genre $value"
