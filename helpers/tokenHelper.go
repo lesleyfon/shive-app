@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 	"shive/database"
+	"shive/models"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -55,7 +55,12 @@ func GenerateAllTokens(
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	token, err := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		claims,
+	).SignedString(
+		[]byte(SECRET_KEY),
+	)
 	refreshToken, refreshTokenErr := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
 
 	if err != nil {
@@ -104,36 +109,54 @@ func ValidateToken(signedToken string) (claims *JwtSignedDetails, msg string) {
 	return claims, msg
 }
 
-func UpdateTokens(signedToken string, signedRefreshedToken string, userId string) {
+func UpdateTokens(signedToken string, signedRefreshedToken string, userId string) (*models.User, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
 
-	var updateTok primitive.D
-
-	updateTok = append(updateTok, bson.E{Key: "token", Value: signedToken})
-	updateTok = append(updateTok, bson.E{Key: "refreshedToken", Value: signedRefreshedToken})
-
-	Update_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	updateTok = append(updateTok, bson.E{Key: "updated_at", Value: Update_at})
-
-	upsert := true
-	filter := bson.M{"user_id": userId}
-	opt := options.UpdateOptions{
-		Upsert: &upsert,
+	// Initialize the update document
+	updateTokenDocs := bson.D{
+		{
+			Key:   "token",
+			Value: signedToken,
+		},
+		{
+			Key:   "refreshedToken",
+			Value: signedRefreshedToken,
+		},
+		{
+			Key:   "updated_at",
+			Value: time.Now()},
 	}
 
-	_, err := userCollection.UpdateOne(
+	// Define filter based on the userId
+	filter := bson.M{"user_id": userId}
+	returnDocument := options.After
+
+	// Specify options for upsert and to return the updated document
+	upsert := true
+	opt := options.FindOneAndUpdateOptions{
+		Upsert:         &upsert,
+		ReturnDocument: &returnDocument, // Return the updated document
+	}
+
+	// Perform the update operation and get the updated document back
+	var updatedUser models.User
+	err := userCollection.FindOneAndUpdate(
 		ctx,
 		filter,
 		bson.D{
-			{Key: "$set", Value: updateTok},
+			{
+				Key:   "$set",
+				Value: updateTokenDocs,
+			},
 		},
 		&opt,
-	)
-
-	defer cancel()
+	).Decode(&updatedUser) // Decode the result into updatedUser
 
 	if err != nil {
-		log.Panic(err)
-		return
+		log.Printf("Error updating token for user %s: %v", userId, err.Error())
+		return nil, err
 	}
+
+	return &updatedUser, nil
 }
