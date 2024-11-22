@@ -30,4 +30,9 @@ func GenreRouter(router *gin.Engine) {
 		"genres/:genre_id",
 		controller.UpdateGenre(),
 	)
+
+	router.DELETE(
+		"genres/:genre_id",
+		controller.DeleteGenre(),
+	)
 }

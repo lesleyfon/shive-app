@@ -23,11 +23,11 @@ func CreateGenre() gin.HandlerFunc {
 
 		if err := helpers.VerifyUserType(c, "ADMIN"); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+				"error":   err.Error(),
+				"message": "Error Validating Admin user",
 			})
 			return
 		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		var genre models.Genre
 		defer cancel()
@@ -366,6 +366,73 @@ func UpdateGenre() gin.HandlerFunc {
 				"Status":  http.StatusOK,
 				"Message": "success",
 				"Data":    updatedGenre,
+			},
+		)
+	}
+}
+
+func DeleteGenre() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userAuthErr := helpers.VerifyUserType(c, "ADMIN")
+
+		if userAuthErr != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				gin.H{
+					"status":  http.StatusUnauthorized,
+					"message": "Unauthorized",
+					"error":   userAuthErr.Error(),
+				},
+			)
+			return
+		}
+
+		genreId := c.Param("genre_id")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		result, err := genreCollection.DeleteOne(
+			ctx,
+			bson.M{
+				"genre_id": genreId,
+			},
+		)
+
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"error":   err.Error(),
+					"message": "Error Deleting Genre",
+				})
+			return
+		}
+
+		if result.DeletedCount < 1 {
+			c.JSON(http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"message": "error",
+					"data": map[string]interface{}{
+						"data":     "Genre with specified ID not found!",
+						"genre_id": genreId,
+					},
+				},
+			)
+			return
+		}
+
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"message": "success",
+				"data": map[string]interface{}{
+					"data": "Genre successfully deleted!",
+				},
 			},
 		)
 	}
