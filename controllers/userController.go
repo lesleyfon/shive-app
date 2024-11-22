@@ -224,13 +224,7 @@ func Login() gin.HandlerFunc {
 			*&user.User_id,
 		)
 
-		helper.UpdateTokens(token, refreshedToken, user.User_id)
-		err = userCollection.FindOne(
-			ctx,
-			bson.M{
-				"user_id": retrievedUser.User_id,
-			},
-		).Decode(&retrievedUser)
+		updatedUser, err := helper.UpdateTokens(token, refreshedToken, user.User_id)
 
 		defer cancel()
 
@@ -246,7 +240,7 @@ func Login() gin.HandlerFunc {
 
 		c.JSON(
 			http.StatusOK,
-			retrievedUser,
+			updatedUser,
 		)
 	}
 }
@@ -412,13 +406,6 @@ func CreateUser() gin.HandlerFunc {
 			},
 		}
 		emailCount, emailErr := userCollection.CountDocuments(ctx, bson.M{"email": regexpMatch})
-		// nameMatch := bson.M{"$regex": primitive.Regex{
-		// 	Pattern: *user.Name,
-		// 	Options: "i",
-		// }}
-		// nameCount, nameCountErr := userCollection.CountDocuments(ctx, bson.M{
-		// 	"name": nameMatch,
-		// })
 
 		if emailErr != nil {
 			log.Panic(emailErr)
@@ -430,15 +417,6 @@ func CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		// if nameCountErr != nil {
-		// 	log.Panic(nameCountErr)
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this name"})
-		// }
-
-		// if nameCount > 0 {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Looks like this name already exists", "count": emailCount})
-		// 	return
-		// }
 		passwordHash := MaskPassword(*user.Password)
 		user.Password = &passwordHash
 
