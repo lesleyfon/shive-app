@@ -105,3 +105,11 @@ value=$(
 )
 
 echo "Update Genre $value"
+
+value=$(
+   curl -s --location --request DELETE "https://ed-6084912263200768.educative.run/genres/{{genre_id}}" \
+      --header "token: $token1" \
+      --data-raw ''
+)
+
+echo "Delete Genre $value"
