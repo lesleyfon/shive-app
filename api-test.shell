@@ -107,9 +107,17 @@ value=$(
 echo "Update Genre $value"
 
 value=$(
-   curl -s --location --request DELETE "https://ed-6084912263200768.educative.run/genres/{{genre_id}}" \
+   curl -s --location --request DELETE "http://localhost:9000/genres/{{genre_id}}" \
       --header "token: $token1" \
       --data-raw ''
 )
 
 echo "Delete Genre $value"
+
+value=$(
+   curl --location --request GET 'http://localhost:9000/genres/search-genre?genre-name=Com' \
+      --header "token: $token" \
+      --header 'Content-Type: application/json'
+)
+
+echo "Search Genres $value"
