@@ -437,3 +437,71 @@ func DeleteGenre() gin.HandlerFunc {
 		)
 	}
 }
+
+func SearchByName() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		var genres []models.Genre
+		searchGenreName := c.Query("genre-name")
+
+		if searchGenreName == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"error": "Please provide a genre name to search",
+				})
+			return
+		}
+
+		partialMatchSearchRegexMatch := bson.M{
+			"name": bson.M{
+				"$regex": primitive.Regex{
+					Pattern: searchGenreName,
+					Options: "i", // Case-insensitive
+				},
+			},
+		}
+
+		// Execute the query to find genres
+		cursor, err := genreCollection.Find(ctx, partialMatchSearchRegexMatch)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"error": "Error occurred while querying genres",
+				})
+			return
+		}
+
+		err = cursor.All(ctx, &genres)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"error": err.Error(),
+				})
+			return
+		}
+
+		if len(genres) == 0 {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"message": "No genres found matching the search criteria",
+				})
+			return
+		}
+
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"status":          http.StatusOK,
+				"searchGenreName": searchGenreName,
+				"data":            genres,
+			})
+	}
+}

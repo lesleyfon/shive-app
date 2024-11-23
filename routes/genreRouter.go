@@ -26,13 +26,20 @@ func GenreRouter(router *gin.Engine) {
 		"/genres",
 		controller.GetAllGenres(),
 	)
+
 	router.PUT(
-		"genres/:genre_id",
+		"/genres/:genre_id",
 		controller.UpdateGenre(),
 	)
 
 	router.DELETE(
-		"genres/:genre_id",
+		"/genres/:genre_id",
 		controller.DeleteGenre(),
 	)
+
+	router.GET(
+		"/genres/search-genre",
+		controller.SearchByName(),
+	)
+
 }
