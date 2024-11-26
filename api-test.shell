@@ -121,3 +121,18 @@ value=$(
 )
 
 echo "Search Genres $value"
+
+# Create Movie
+value=$(
+   curl --location 'http://localhost:9000/movies/create-movie' \
+      --header "token: $token" \
+      --header 'Content-Type: application/json' \
+      --data '{
+         "name": "Linconl Lawyer Season 2",
+         "topic": "Law",
+         "movie_url": "https://www.youtube.com/watch?v=IFwE3UgCMIk",
+         "genre_id": "6736be9e1e8570f75e2b778f"
+      }'
+)
+
+echo "Create Movie $value"
