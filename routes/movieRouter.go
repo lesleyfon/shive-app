@@ -12,4 +12,5 @@ func MovieRoutes(router *gin.Engine) {
 	router.Use(middleware.Authenticate())
 
 	router.POST("/movies/create-movie", controllers.CreateMovie())
+	router.GET("/movies/:movie_id", controllers.GetMovie())
 }

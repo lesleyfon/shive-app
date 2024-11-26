@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"shive/database"
 	"shive/helpers"
@@ -130,5 +131,44 @@ func CreateMovie() gin.HandlerFunc {
 				"message": "Movie Created",
 				"data":    result,
 			})
+	}
+}
+
+func GetMovie() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		var movie models.Movie
+
+		movieId := c.Param("movie_id")
+
+		movieFilter := bson.M{
+			"movie_id": movieId,
+		}
+
+		fmt.Println(movieId)
+		err := movieCollection.FindOne(ctx, movieFilter).Decode(&movie)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "Error fetching movie from the db",
+					"error":   err.Error(),
+				},
+			)
+			return
+		}
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"data":    movie,
+				"message": "Ok",
+			},
+		)
 	}
 }
