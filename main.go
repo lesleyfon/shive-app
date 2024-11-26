@@ -26,6 +26,7 @@ func main() {
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)
 	routes.GenreRouter(router)
+	routes.MovieRoutes(router)
 
 	router.GET("/api", func(ctx *gin.Context) {
 		ctx.JSON(
