@@ -143,3 +143,11 @@ value=$(
 )
 
 echo "Get Movie $value"
+
+# Get All Movies
+value=$(
+   curl --location 'http://localhost:9000/movies' \
+      --header "token: $token"
+)
+
+echo "Get All Movies $value"
