@@ -136,3 +136,10 @@ value=$(
 )
 
 echo "Create Movie $value"
+
+value=$(
+   curl --location 'http://localhost:9000/movies/67454873f041dc584f45061b' \
+      --header "token: $token"
+)
+
+echo "Get Movie $value"
