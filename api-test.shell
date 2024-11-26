@@ -151,3 +151,17 @@ value=$(
 )
 
 echo "Get All Movies $value"
+
+# Update Movie
+value=$(
+   curl --location --request PUT 'http://localhost:9000/movies/67454bf37aef74caf36ea59c' \
+      --header "token: $token" \
+      --header 'Content-Type: application/json' \
+      --data '{
+         "movie_url": "https://www.youtube.com/watch?v=IFwE3UgCMIk",
+         "name": "Linconl Lawyer Season 3",
+         "topic": "Law & Order"
+      }'
+)
+
+echo "Update Movie $value"
