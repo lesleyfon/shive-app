@@ -63,9 +63,9 @@ func CreateGenre() gin.HandlerFunc {
 		}
 		if count > 0 {
 			c.JSON(
-				http.StatusUnauthorized,
+				http.StatusBadRequest,
 				gin.H{
-					"status": http.StatusUnauthorized,
+					"status": http.StatusBadRequest,
 					"error":  "this genre name already exists",
 					"count":  count,
 				},
