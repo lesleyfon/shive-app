@@ -47,7 +47,7 @@ func CreateMovie() gin.HandlerFunc {
 		}
 
 		movieRegexMatch := bson.M{
-			"Name": bson.M{
+			"name": bson.M{
 				"$regex": primitive.Regex{
 					Pattern: *movie.Name,
 					Options: "i",

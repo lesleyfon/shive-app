@@ -12,7 +12,7 @@ type Movie struct {
 	Topic *string            `json:"topic" validate:"required"`
 
 	Movie_id  string `json:"movie_id"`
-	Movie_URL string `json:"movie_url"`
+	Movie_URL string `json:"movie_url" validate:"url"`
 
 	Genre_id string `json:"genre_id"`
 
