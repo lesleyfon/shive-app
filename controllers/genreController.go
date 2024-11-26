@@ -263,7 +263,7 @@ func GetAllGenres() gin.HandlerFunc {
 				gin.H{
 					"status":  http.StatusInternalServerError,
 					"message": "error occured while fetching genres ",
-					"error":   err,
+					"error":   err.Error(),
 				},
 			)
 			return

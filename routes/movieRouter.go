@@ -13,4 +13,5 @@ func MovieRoutes(router *gin.Engine) {
 
 	router.POST("/movies/create-movie", controllers.CreateMovie())
 	router.GET("/movies/:movie_id", controllers.GetMovie())
+	router.GET("/movies", controllers.GetAllMovies())
 }

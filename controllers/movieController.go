@@ -3,15 +3,18 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"shive/database"
 	"shive/helpers"
 	"shive/models"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var movieCollection = database.OpenCollection(database.Client, "movie")
@@ -170,5 +173,121 @@ func GetMovie() gin.HandlerFunc {
 				"message": "Ok",
 			},
 		)
+	}
+}
+
+func GetAllMovies() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+		recordPerPageQueryKey := c.Query("recordPerPage")
+		recordPerPage, err := strconv.Atoi(recordPerPageQueryKey)
+
+		if err != nil || recordPerPage < 1 {
+			recordPerPage = 10
+		}
+
+		pageQueryKey := c.Query("page")
+		page, pageErr := strconv.Atoi(pageQueryKey)
+
+		if pageErr != nil || page < 1 {
+			page = 1
+		}
+
+		startIndex := (page - 1) * recordPerPage
+		startIndex, err = strconv.Atoi(c.Query("startIndex"))
+
+		matchStage := bson.D{
+			{
+				Key:   "$match",
+				Value: bson.D{{}},
+			},
+		}
+
+		groupStage := bson.D{
+			{
+				Key: "$group",
+				Value: bson.D{
+					{
+						Key: "_id",
+						Value: bson.D{
+							{
+								Key:   "_id",
+								Value: "null",
+							},
+						},
+					},
+					{
+						Key: "total_count",
+						Value: bson.D{{
+							Key:   "$sum",
+							Value: 1,
+						}},
+					},
+					{
+						Key: "data",
+						Value: bson.D{{
+							Key:   "$push",
+							Value: "$$ROOT",
+						}},
+					},
+				},
+			}}
+
+		projectStage := bson.D{
+			{
+				Key: "$project",
+				Value: bson.D{
+					{
+						Key:   "_id",
+						Value: 0,
+					}, {
+						Key:   "total_count",
+						Value: 1,
+					}, {
+						Key: "movie_items",
+						Value: bson.D{{
+							Key: "$slice",
+							Value: []interface{}{
+								"$data", startIndex, recordPerPage,
+							}},
+						},
+					},
+				},
+			},
+		}
+		result, err := movieCollection.Aggregate(ctx, mongo.Pipeline{
+			matchStage,
+			groupStage,
+			projectStage,
+		})
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "error occurred while fetching all movies ",
+					"error":   err.Error(),
+				},
+			)
+			return
+		}
+
+		var allMovies []bson.M
+
+		err = result.All(ctx, &allMovies)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		c.JSON(http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"message": "Ok",
+				"data":    allMovies[0],
+			})
 	}
 }
