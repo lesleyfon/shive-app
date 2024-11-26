@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"shive/database"
@@ -151,7 +150,7 @@ func GetMovie() gin.HandlerFunc {
 			"movie_id": movieId,
 		}
 
-		fmt.Println(movieId)
+		// Find the movie by id
 		err := movieCollection.FindOne(ctx, movieFilter).Decode(&movie)
 
 		if err != nil {
@@ -181,23 +180,29 @@ func GetAllMovies() gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 
 		defer cancel()
+
+		// Get the record per page query
 		recordPerPageQueryKey := c.Query("recordPerPage")
 		recordPerPage, err := strconv.Atoi(recordPerPageQueryKey)
 
+		// If the record per page query is not a number or is less than 1, set it to 10
 		if err != nil || recordPerPage < 1 {
 			recordPerPage = 10
 		}
 
+		// Get the page query
 		pageQueryKey := c.Query("page")
 		page, pageErr := strconv.Atoi(pageQueryKey)
 
+		// If the page query is not a number or is less than 1, set it to 1
 		if pageErr != nil || page < 1 {
 			page = 1
 		}
 
+		// Calculate the start index
 		startIndex := (page - 1) * recordPerPage
-		startIndex, err = strconv.Atoi(c.Query("startIndex"))
 
+		// Match stage - Match the movie by id
 		matchStage := bson.D{
 			{
 				Key:   "$match",
@@ -205,10 +210,12 @@ func GetAllMovies() gin.HandlerFunc {
 			},
 		}
 
+		// Group stage - Group the movies by id
 		groupStage := bson.D{
 			{
 				Key: "$group",
 				Value: bson.D{
+					// _id stage - Set the _id to null
 					{
 						Key: "_id",
 						Value: bson.D{
@@ -219,6 +226,7 @@ func GetAllMovies() gin.HandlerFunc {
 						},
 					},
 					{
+						// Total count stage - Count the total number of movies
 						Key: "total_count",
 						Value: bson.D{{
 							Key:   "$sum",
@@ -226,6 +234,7 @@ func GetAllMovies() gin.HandlerFunc {
 						}},
 					},
 					{
+						// Data stage - Push the movies to the data array
 						Key: "data",
 						Value: bson.D{{
 							Key:   "$push",
@@ -235,19 +244,25 @@ func GetAllMovies() gin.HandlerFunc {
 				},
 			}}
 
+		// Project stage - Project the movies
 		projectStage := bson.D{
 			{
+				// Project stage - Project the movies
 				Key: "$project",
 				Value: bson.D{
 					{
+						// _id stage - Set the _id to 0
 						Key:   "_id",
 						Value: 0,
 					}, {
+						// Total count stage - Count the total number of movies
 						Key:   "total_count",
 						Value: 1,
 					}, {
+						// Movie items stage - Slice the movies
 						Key: "movie_items",
 						Value: bson.D{{
+							// Slice stage - Slice the movies from the data array when we have pagination
 							Key: "$slice",
 							Value: []interface{}{
 								"$data", startIndex, recordPerPage,
@@ -257,6 +272,8 @@ func GetAllMovies() gin.HandlerFunc {
 				},
 			},
 		}
+
+		// Aggregate the movies
 		result, err := movieCollection.Aggregate(ctx, mongo.Pipeline{
 			matchStage,
 			groupStage,
