@@ -409,3 +409,81 @@ func UpdateMovie() gin.HandlerFunc {
 		})
 	}
 }
+
+func SearchMovieByQuery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var searchedMovies []models.Movie
+
+		movieName := c.Param("movieName")
+
+		if movieName == "" {
+			log.Println("movie name is empty")
+			c.Header("Content-Type", "application/json")
+
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"error": "Invalid search parameter" + movieName,
+				},
+			)
+			c.Abort()
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+
+		filter := bson.M{
+			"name": bson.M{
+				"$regex": primitive.Regex{
+					Pattern: movieName,
+					Options: "i",
+				},
+			},
+		}
+		searchQuery, err := movieCollection.Find(ctx, filter)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "error occurred while searching for movie in db",
+				},
+			)
+			return
+		}
+
+		err = searchQuery.All(ctx, &searchedMovies)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "error occurred while decoding for movie in db",
+				},
+			)
+			return
+		}
+
+		defer searchQuery.Close(ctx)
+		err = searchQuery.Err()
+		if err != nil {
+			log.Println(err)
+			c.IndentedJSON(
+				http.StatusBadRequest,
+				gin.H{
+					"message": "invalid request",
+					"status":  http.StatusBadRequest,
+					"error":   err.Error(),
+				},
+			)
+			return
+		}
+		defer cancel()
+		c.IndentedJSON(200, searchedMovies)
+	}
+}
