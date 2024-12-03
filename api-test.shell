@@ -165,3 +165,11 @@ value=$(
 )
 
 echo "Update Movie $value"
+
+# Search movie
+value=$(
+   curl --location 'http://localhost:9000/movies/search/Linconl' \
+      --header "token: $token"
+)
+
+echo "Search Movie $value"
