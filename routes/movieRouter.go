@@ -17,6 +17,7 @@ func MovieRoutes(router *gin.Engine) {
 	router.GET("/movies/:movie_id", controllers.GetMovie())
 	router.GET("/movies", controllers.GetAllMovies())
 	router.GET("/movies/search/:movieName", controllers.SearchMovieByQuery())
+	router.GET("/movies/filter/:genreId", controllers.SearchMovieByGenreId())
 
 	router.PUT("/movies/:movie_id", controllers.UpdateMovie())
 }

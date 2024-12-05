@@ -487,3 +487,65 @@ func SearchMovieByQuery() gin.HandlerFunc {
 		c.IndentedJSON(200, searchedMovies)
 	}
 }
+
+func SearchMovieByGenreId() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		var filteredMovies []models.Movie
+		genreId := c.Param("genreId")
+		println(genreId)
+		if genreId == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"error":   "Ensure you add a genre Id to the endpoint",
+					"message": "Error occurred while getting genre ID from from the request endpoint",
+				})
+			return
+		}
+
+		filter := bson.M{
+			"genre_id": bson.M{
+				"$regex": primitive.Regex{
+					Pattern: genreId,
+					Options: "i",
+				},
+			},
+		}
+
+		searchDB, err := movieCollection.Find(ctx, filter)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while retrieving data from the database",
+				})
+			return
+		}
+
+		err = searchDB.All(ctx, &filteredMovies)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while decoding filtered movies data from the database",
+				})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "filtered movies!",
+			"data":    filteredMovies,
+		})
+
+	}
+}
