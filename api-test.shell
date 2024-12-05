@@ -173,3 +173,11 @@ value=$(
 )
 
 echo "Search Movie $value"
+
+# Filter Movie
+value=$(
+   curl --location 'http://localhost:9000/movies/filter/6736' \
+      --header "token: $token"
+)
+
+echo "Filter Movie $value"
