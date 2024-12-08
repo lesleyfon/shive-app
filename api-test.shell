@@ -181,3 +181,11 @@ value=$(
 )
 
 echo "Filter Movie $value"
+
+# Delete Movie
+value=$(
+   curl --location --request DELETE "http://localhost:9000/movies/{{movie_id}}" \
+      --header "token: $token"
+)
+
+echo "Delete Movie $value"
