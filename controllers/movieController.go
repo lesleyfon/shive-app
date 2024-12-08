@@ -549,3 +549,76 @@ func SearchMovieByGenreId() gin.HandlerFunc {
 
 	}
 }
+
+func DeleteMovieByMovieId() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		err := helpers.VerifyUserType(c, "ADMIN")
+
+		if err != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				gin.H{
+					"status":  http.StatusUnauthorized,
+					"error":   err.Error(),
+					"message": "User must be an admin to delete a movie",
+				},
+			)
+			return
+		}
+
+		movieId := c.Param("movie_id")
+
+		if movieId == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"message": "Please provide a movie Id",
+				},
+			)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		filter := bson.M{
+			"movie_id": movieId,
+		}
+
+		result, err := movieCollection.DeleteOne(ctx, filter)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while deleting movie",
+				},
+			)
+			return
+		}
+
+		if result.DeletedCount < 1 {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"message": "Movie with specified ID not found!",
+				},
+			)
+			return
+		}
+
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"message": "Movie successfully deleted!",
+				"count":   result.DeletedCount,
+			},
+		)
+	}
+}
