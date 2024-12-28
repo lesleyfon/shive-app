@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -101,5 +102,64 @@ func AddReview() gin.HandlerFunc {
 				"data":    result,
 			},
 		)
+	}
+}
+
+func GetAllMovieReviews() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*100)
+		defer cancel()
+		var reviews []models.Review
+		movieId := c.Param("movie_id")
+
+		if movieId == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"message": "Ensure you add a movie Id to the endpoint",
+				},
+			)
+			return
+		}
+
+		filter := bson.M{
+			"movie_id": primitive.Regex{
+				Pattern: movieId,
+				Options: "i",
+			},
+		}
+
+		searchedReviews, err := reviewCollection.Find(ctx, filter)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while retrieving review data from the database",
+				})
+			return
+		}
+
+		err = searchedReviews.All(ctx, &reviews)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while decoding filtered movie review data from the database",
+				})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":  http.StatusOK,
+			"message": "filtered reviews!",
+			"data":    reviews,
+		})
 	}
 }
