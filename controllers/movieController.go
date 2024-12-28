@@ -496,7 +496,7 @@ func SearchMovieByGenreId() gin.HandlerFunc {
 
 		var filteredMovies []models.Movie
 		genreId := c.Param("genreId")
-		println(genreId)
+
 		if genreId == "" {
 			c.JSON(
 				http.StatusBadRequest,
