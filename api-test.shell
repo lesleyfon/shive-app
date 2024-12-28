@@ -202,3 +202,11 @@ value=$(
 )
 
 echo "Add Review $value"
+
+# Filter Review
+value=$(
+   curl --location 'http://localhost:9000/review/filter/123' \
+      --header "token: $token"
+)
+
+echo "Filter Review $value"
