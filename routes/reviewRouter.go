@@ -13,4 +13,7 @@ func ReviewRoutes(router *gin.Engine) {
 
 	// POST Calls
 	router.POST("/review/add-review", controllers.AddReview())
+
+	// GET Calls
+	router.GET("/review/filter/:movie_id", controllers.GetAllMovieReviews())
 }
