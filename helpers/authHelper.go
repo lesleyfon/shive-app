@@ -12,7 +12,7 @@ func VerifyUserType(c *gin.Context, role string) (err error) {
 	err = nil
 
 	if userType != role {
-		msg := "You Are Not Authorised to Access This!" + "role : " + role + ", userType : " + userType
+		msg := "You Are Not Authorized to Access This!" + "role : " + role + ", userType : " + userType
 		err = errors.New(msg)
 		return err
 	}
@@ -26,7 +26,7 @@ func MatchToUid(c *gin.Context, userId string) (err error) {
 	err = nil
 
 	if userType == "USER" && uid != userId {
-		err = errors.New("You are not authorised to access this!Unauthorized to access this resource")
+		err = errors.New("you are not authorized to access this!Unauthorized to access this resource")
 		return err
 
 	}
