@@ -189,3 +189,16 @@ value=$(
 )
 
 echo "Delete Movie $value"
+
+# Add Review
+value=$(
+   curl --location 'http://localhost:9000/review/add-review' \
+      --header 'token: $token' \
+      --header 'Content-Type: application/json' \
+      --data '{
+         "Movie_id": "1234",
+         "Review": "Awesome watch!"
+      }'
+)
+
+echo "Add Review $value"
