@@ -171,7 +171,8 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"error": "Your email or password is incorrect",
+					"message": "Your email or password is incorrect",
+					"error":   err.Error(),
 				},
 			)
 		}
@@ -189,7 +190,8 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"error": "Your email or password is incorrect",
+					"message": "Your email or password is incorrect",
+					"error":   err.Error(),
 				},
 			)
 			return
@@ -219,12 +221,18 @@ func Login() gin.HandlerFunc {
 		token, refreshedToken, _ := helper.GenerateAllTokens(
 			*user.Email,
 			*user.Name,
-			*user.Username,
+			*retrievedUser.Username,
 			*user.User_type,
-			*&user.User_id,
+			retrievedUser.User_id,
 		)
 
 		updatedUser, err := helper.UpdateTokens(token, refreshedToken, user.User_id)
+		// TODO: get the details from updateTokens method
+		updatedUser.Email = retrievedUser.Email
+		updatedUser.Name = retrievedUser.Name
+		updatedUser.Username = retrievedUser.Username
+		updatedUser.User_id = retrievedUser.User_id
+		updatedUser.User_type = retrievedUser.User_type
 
 		defer cancel()
 
