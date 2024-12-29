@@ -299,3 +299,110 @@ func AllUserReviews() gin.HandlerFunc {
 		)
 	}
 }
+
+func EditReviews() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		var review models.Review
+		defer cancel()
+
+		err := c.BindJSON(&review)
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"message": "Error",
+					"error":   err.Error(),
+				},
+			)
+			return
+		}
+
+		if validationError := validate.Struct(&review); validationError != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  http.StatusBadRequest,
+				"message": "Validator error: error with request body",
+				"error":   validationError.Error(),
+			},
+			)
+			return
+		}
+
+		// Write your code here
+		reviewId := c.Param("review_id")
+		reviewerId := c.GetString("uid")
+
+		if reviewId == "" {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"error":   "Invalid Search Index",
+					"message": "No review id passed",
+				},
+			)
+			return
+		}
+
+		filter := bson.M{
+			"review_id":   reviewId,
+			"reviewer_id": reviewerId,
+		}
+
+		result, err := reviewCollection.UpdateOne(ctx, filter,
+			bson.M{
+				"$set": bson.M{
+					"review":     review.Review,
+					"updated_at": time.Now(),
+				},
+			})
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "error",
+					"error":   err.Error(),
+				},
+			)
+			return
+		}
+
+		var updatedReview models.Review
+
+		if result.MatchedCount < 1 {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"message": "error",
+					"data":    "Review with specified ID not found! review_id: " + reviewId + ", reviewer_id: " + reviewerId,
+				},
+			)
+			return
+		}
+
+		if result.MatchedCount == 1 {
+			err := reviewCollection.FindOne(ctx, filter).Decode(&updatedReview)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status":  http.StatusInternalServerError,
+					"message": "error",
+					"data":    map[string]interface{}{"data": err.Error()},
+				},
+				)
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"status":  http.StatusOK,
+				"message": "Review updated successfully!",
+				"data":    updatedReview,
+			})
+		}
+	}
+}
