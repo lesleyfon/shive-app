@@ -240,3 +240,62 @@ func DeleteReviewByReviewId() gin.HandlerFunc {
 		)
 	}
 }
+
+// Allow a user view all their Reviews
+func AllUserReviews() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var searchReviews []models.Review
+		reviewerId := c.Param("reviewer_id")
+
+		if reviewerId == "" {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"error":   "Invalid Search Index",
+					"message": "No reviewer id passed",
+				},
+			)
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+
+		defer cancel()
+
+		searchQueryDB, err := reviewCollection.Find(ctx, bson.M{"reviewer_id": reviewerId})
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while fetching the database query",
+				},
+			)
+			return
+		}
+		err = searchQueryDB.All(ctx, &searchReviews)
+
+		if err != nil {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"error":   err.Error(),
+					"message": "Error occurred while decoding filtered movie review data from the database",
+				},
+			)
+			return
+		}
+
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"message": "success",
+				"data":    searchReviews,
+			},
+		)
+	}
+}

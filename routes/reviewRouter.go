@@ -16,7 +16,9 @@ func ReviewRoutes(router *gin.Engine) {
 
 	// GET Calls
 	router.GET("/review/filter/:movie_id", controllers.GetAllMovieReviews())
+	router.GET("/review/user_reviews/:reviewer_id", controllers.AllUserReviews())
 
 	// DELETE Calls
 	router.DELETE("/review/delete/:review_id", controllers.DeleteReviewByReviewId())
+
 }
