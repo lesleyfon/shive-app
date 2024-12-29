@@ -210,3 +210,11 @@ value=$(
 )
 
 echo "Filter Review $value"
+
+# Delete Review
+value=$(
+   curl --location --request DELETE 'http://localhost:9000/review/delete/1234' \
+      --header "token: $token"
+)
+
+echo "Delete Review $value"
