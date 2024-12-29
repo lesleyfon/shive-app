@@ -21,4 +21,6 @@ func ReviewRoutes(router *gin.Engine) {
 	// DELETE Calls
 	router.DELETE("/review/delete/:review_id", controllers.DeleteReviewByReviewId())
 
+	// PUT Calls
+	router.PUT("reviews/edit-review/:review_id", controllers.EditReviews())
 }
