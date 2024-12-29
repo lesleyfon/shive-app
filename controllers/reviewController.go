@@ -163,3 +163,80 @@ func GetAllMovieReviews() gin.HandlerFunc {
 		})
 	}
 }
+
+func DeleteReviewByReviewId() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		err := helpers.VerifyUserType(c, "USER")
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*100)
+
+		defer cancel()
+
+		if err != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				gin.H{
+					"status":  http.StatusUnauthorized,
+					"error":   err.Error(),
+					"message": "Only users can delete reviews",
+				},
+			)
+			return
+		}
+
+		reviewId := c.Param("review_id")
+
+		if reviewId == "" {
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"status":  http.StatusBadRequest,
+					"message": "Ensure you add a review Id to the endpoint",
+				},
+			)
+			return
+		}
+
+		reviewerId := c.GetString("uid")
+
+		filter := bson.M{
+			"review_id":   reviewId,
+			"reviewer_id": reviewerId,
+		}
+
+		result, err := reviewCollection.DeleteOne(ctx, filter)
+
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"status":  http.StatusInternalServerError,
+					"error":   err.Error(),
+					"message": "Error occurred while deleting a review",
+				},
+			)
+			return
+		}
+
+		if result.DeletedCount < 1 {
+			c.JSON(
+				http.StatusNotFound,
+				gin.H{
+					"status":  http.StatusNotFound,
+					"message": "error",
+					"data":    "Review with specified ID not found!",
+				},
+			)
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			gin.H{
+				"status":  http.StatusOK,
+				"message": "success",
+				"data":    "Your review was successfully deleted!",
+			},
+		)
+	}
+}
