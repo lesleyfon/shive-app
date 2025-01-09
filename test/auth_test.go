@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"shive/models"
@@ -83,19 +82,29 @@ func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
 	loginURL := fmt.Sprintf("%s/users/login", baseURL)
 	jsonData, _ := json.Marshal(user)
 
-	resp, err := http.Post(loginURL, "application/json", bytes.NewBuffer(jsonData))
+	// Create a new request
+	req, err := http.NewRequest("POST", loginURL, bytes.NewBuffer(jsonData))
 	assert.NoError(t, err, "Login request should not error")
-	defer resp.Body.Close()
 
-	// Read and log the response body
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
-	fmt.Printf("Login Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
+	// Set the content type header
+	req.Header.Set("Content-Type", "application/json")
+
+	// Create a new client
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	assert.NoError(t, err, "Login request should not error")
+
+	defer resp.Body.Close()
 
 	var loginResp LoginResponse
 	err = json.NewDecoder(resp.Body).Decode(&loginResp)
-	if err != nil {
-		t.Fatalf("Failed to decode login response: %v", err)
+	assert.NoError(t, err, "Should decode response")
+
+	// LOG response if status is not 200
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Login Response:", loginResp)
 	}
 	// Assert response structure
 	assert.NotEmpty(t, loginResp.ID, "ID should not be empty")
@@ -134,11 +143,6 @@ func testGetUserDetails(t *testing.T, baseURL string, token string, userID strin
 	resp, err := client.Do(req)
 	assert.NoError(t, err, "User details request should not error")
 	defer resp.Body.Close()
-
-	// Read and log the response body
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
-	fmt.Printf("Get User Details Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
 
 	var userDetails models.User
 	err = json.NewDecoder(resp.Body).Decode(&userDetails)
