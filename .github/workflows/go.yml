@@ -37,8 +37,14 @@ jobs:
                   go build -v .
 
             - name: Start API Server
+              env:
+                  # Add any environment variables your app needs
+                  PORT: "9000"
+                  ENV: "production"
+                  # MongoDB URI is already set at the workflow level
+                  MONGODB_URI: ${{ secrets.MONGODB_URI }}
               run: |
-                  ./shive
+                  ./shive-app &
                   sleep 10
             - name: Run  auth tests
               env:
