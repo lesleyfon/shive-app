@@ -36,6 +36,7 @@ jobs:
                   echo "PORT=9000" >> .env
                   echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
                   echo "ENV=production" >> .env
+                  echo "MONGOURI=${{ secrets.MONGODB_URI }}" >> .env
 
             - name: Build Code
               id: Build-Code
