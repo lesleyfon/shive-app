@@ -56,7 +56,7 @@ func Signup() gin.HandlerFunc {
 		defer cancel()
 		if emailErr != nil {
 			log.Panic(emailErr)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this email"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error occurred while checking for this email"})
 		}
 		if emailCount > 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Looks like this email already exists", "count": emailCount})
@@ -64,7 +64,7 @@ func Signup() gin.HandlerFunc {
 		}
 		if usernameErr != nil {
 			log.Panic(usernameErr)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this email / username"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error occurred while checking for this email / username"})
 		}
 		if usernameCount > 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Looks like this username already exists", "count": usernameCount})
@@ -180,7 +180,7 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"message": "Your email or password is incorrect",
+					"message": "Error occurred while binding JSON",
 					"error":   err.Error(),
 				},
 			)
@@ -199,7 +199,7 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"message": "Your email or password is incorrect",
+					"message": "Error occurred while finding user",
 					"error":   err.Error(),
 				},
 			)
@@ -213,7 +213,8 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"error": msg,
+					"message": msg,
+					"error":   err.Error(),
 				},
 			)
 		}
@@ -222,7 +223,8 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusBadRequest,
 				gin.H{
-					"error": "Oops account not found",
+					"message": "Oops account not found",
+					"error":   err.Error(),
 				},
 			)
 		}
@@ -249,7 +251,8 @@ func Login() gin.HandlerFunc {
 			c.JSON(
 				http.StatusInternalServerError,
 				gin.H{
-					"error": err.Error(),
+					"message": "Error occurred while updating tokens",
+					"error":   err.Error(),
 				},
 			)
 			return
@@ -373,7 +376,7 @@ func GetUsers() gin.HandlerFunc {
 			c.JSON(
 				http.StatusInternalServerError,
 				gin.H{
-					"error": "error occured while listing user items",
+					"error": "error occurred while listing user items",
 				},
 			)
 		}
@@ -426,7 +429,7 @@ func CreateUser() gin.HandlerFunc {
 
 		if emailErr != nil {
 			log.Panic(emailErr)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "error occured while checking for this email"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error occurred while checking for this email"})
 		}
 
 		if emailCount > 0 {
