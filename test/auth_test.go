@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"shive/models"
@@ -72,7 +73,9 @@ func TestAPIEndpoints(t *testing.T) {
 
 		// LOG response if status is not 201
 		if resp.StatusCode != http.StatusCreated {
-			fmt.Println("Signup Response errored out:", resp)
+			body, _ := io.ReadAll(resp.Body)
+			resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body for later use
+			fmt.Printf("Signup Response error: Status: %d, Body: %s\n", resp.StatusCode, string(body))
 		}
 
 		assert.NoError(t, err, "Signup request should not error")

@@ -52,7 +52,7 @@ jobs:
                   MONGODB_URI: ${{ secrets.MONGODB_URI }}
               run: |
                   ./shive-app &
-                  sleep 10
+                  sleep 20
             - name: Run  auth tests
               env:
                   API_URL: http://localhost:9000
