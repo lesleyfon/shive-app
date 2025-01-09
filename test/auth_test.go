@@ -14,6 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/**
+IF: TEST ARE FAILING IN GITHUB ACTIONS, UPDATE IP ADDRESS ON THE `Network Access` TAB.
+LOOK AT THIS LINK:
+	- https://stackoverflow.com/questions/75839566/why-cant-i-connect-to-mongodb-atlas-with-github-actions
+ 	- https://medium.com/@clemensstich/how-to-use-mongodb-in-github-actions-bf24a0d9adf3
+*/
+
 type LoginResponse struct {
 	ID           string    `json:"ID"`
 	Name         string    `json:"name"`
