@@ -121,7 +121,7 @@ func Signup() gin.HandlerFunc {
 			Refresh_token: user.Refresh_token,
 		}
 
-		result, err := userCollection.InsertOne(ctx, newUser)
+		_, err := userCollection.InsertOne(ctx, newUser)
 
 		//Error messages
 		if err != nil {
@@ -133,9 +133,18 @@ func Signup() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusCreated, gin.H{
-			"Status":  http.StatusCreated,
-			"Message": "User created successfully!",
-			"Data":    map[string]interface{}{"data": result}})
+			"status":  http.StatusCreated,
+			"message": "User created successfully!",
+			"data": map[string]string{
+				"user_id":       newUser.User_id,
+				"token":         *newUser.Token,
+				"refresh_token": *newUser.Refresh_token,
+				"name":          *newUser.Name,
+				"username":      *newUser.Username,
+				"email":         *newUser.Email,
+				"user_type":     *newUser.User_type,
+			},
+		})
 	}
 
 }
