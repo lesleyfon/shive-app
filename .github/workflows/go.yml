@@ -1,0 +1,29 @@
+name: Shive_work_flow
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout to build
+              uses: actions/checkout@v2
+            - name: Install go and run linting
+              id: Install-go
+              uses: reviewdog/action-golangci-lint@v2
+            - name: Get dependencies to Build
+              id: Get-dependencies-to-Build
+              run: |
+                  go get -v -t -d ./...
+                  if [ -f Gopkg.toml ]; then
+                      curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+                      dep ensure
+                  fi
+
+            - name: Build Code
+              id: Build-Code
+              run: |
+                  go build -v .
