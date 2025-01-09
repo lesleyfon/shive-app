@@ -34,7 +34,7 @@ jobs:
             - name: Build Code
               id: Build-Code
               run: |
-                  go build -v .
+                  go build -o shive-app -v .
 
             - name: Start API Server
               env:
