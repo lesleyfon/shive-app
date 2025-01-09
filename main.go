@@ -1,11 +1,13 @@
 package main
 
 import (
+	"log"
 	"os"
 	"shive/database"
 	"shive/routes"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -14,7 +16,9 @@ func main() {
 	if port == "" {
 		port = "8000"
 	}
-
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using environment variables")
+	}
 	router := gin.Default()
 
 	// run database
