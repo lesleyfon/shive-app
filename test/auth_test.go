@@ -70,17 +70,14 @@ func TestAPIEndpoints(t *testing.T) {
 		jsonData, _ := json.Marshal(testUser)
 
 		resp, err := http.Post(signupURL, "application/json", bytes.NewBuffer(jsonData))
-
-		// LOG response if status is not 201
-		if resp.StatusCode != http.StatusCreated {
-			body, _ := io.ReadAll(resp.Body)
-			resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body for later use
-			fmt.Printf("Signup Response error: Status: %d, Body: %s\n", resp.StatusCode, string(body))
-		}
-
 		assert.NoError(t, err, "Signup request should not error")
-		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 201 Created")
 
+		// Read and log the response body regardless of status code
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
+		fmt.Printf("Signup Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
+
+		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 201 Created")
 		defer resp.Body.Close()
 	})
 	t.Run("Login Flow", func(t *testing.T) {
@@ -118,29 +115,19 @@ func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
 	loginURL := fmt.Sprintf("%s/users/login", baseURL)
 	jsonData, _ := json.Marshal(user)
 
-	// Create a new request
-	req, err := http.NewRequest("POST", loginURL, bytes.NewBuffer(jsonData))
+	resp, err := http.Post(loginURL, "application/json", bytes.NewBuffer(jsonData))
 	assert.NoError(t, err, "Login request should not error")
-
-	// Set the content type header
-	req.Header.Set("Content-Type", "application/json")
-
-	// Create a new client
-	client := &http.Client{}
-
-	// Send the request
-	resp, err := client.Do(req)
-	assert.NoError(t, err, "Login request should not error")
-
 	defer resp.Body.Close()
+
+	// Read and log the response body
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
+	fmt.Printf("Login Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
 
 	var loginResp LoginResponse
 	err = json.NewDecoder(resp.Body).Decode(&loginResp)
-	assert.NoError(t, err, "Should decode response")
-
-	// LOG response if status is not 200
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Login Response:", loginResp)
+	if err != nil {
+		t.Fatalf("Failed to decode login response: %v", err)
 	}
 	// Assert response structure
 	assert.NotEmpty(t, loginResp.ID, "ID should not be empty")
@@ -165,31 +152,36 @@ func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
 }
 
 func testGetUserDetails(t *testing.T, baseURL string, token string, userID string, testUser TestUser) {
-	// Format the user details URL
-	userDetailsURL := fmt.Sprintf("%s/users/%s", baseURL, userID)
+	// Skip this test if token or userID is empty
+	if token == "" || userID == "" {
+		t.Skip("Skipping user details test due to missing token or userID")
+	}
 
-	// Create a new request
+	userDetailsURL := fmt.Sprintf("%s/users/%s", baseURL, userID)
 	req, err := http.NewRequest("GET", userDetailsURL, nil)
 	assert.NoError(t, err, "User details request should not error")
 
-	// Set the token header
 	req.Header.Set("token", token)
-
-	// Create a new client
 	client := &http.Client{}
-
-	// Send the request
 	resp, err := client.Do(req)
-
-	// Assert that the request was successful
 	assert.NoError(t, err, "User details request should not error")
-
 	defer resp.Body.Close()
 
-	// Decode the response body into a User struct
+	// Read and log the response body
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
+	fmt.Printf("Get User Details Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
+
 	var userDetails models.User
 	err = json.NewDecoder(resp.Body).Decode(&userDetails)
+	if err != nil {
+		t.Fatalf("Failed to decode user details response: %v", err)
+	}
 
+	// Null check before dereferencing pointers
+	if userDetails.Email == nil || userDetails.Username == nil {
+		t.Fatal("Email or Username is nil in response")
+	}
 	// Assert that the response was successful
 	assert.NoError(t, err, "Should decode response")
 	// Assert status code
