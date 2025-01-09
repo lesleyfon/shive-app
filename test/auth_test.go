@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"shive/models"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,10 +15,19 @@ import (
 )
 
 type LoginResponse struct {
-	Token   string `json:"token"`
-	UserID  string `json:"user_id"`
-	Status  int    `json:"status"`
-	Message string `json:"message"`
+	ID           string    `json:"ID"`
+	Name         string    `json:"name"`
+	Username     string    `json:"username"`
+	Password     *string   `json:"password"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	UserType     string    `json:"user_type"`
+	RefreshToken *string   `json:"refresh_token"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	UserID       string    `json:"user_id"`
+	Status       int       `json:"status"`
+	Message      string    `json:"message"`
 }
 
 type TestUser struct {
@@ -122,8 +132,28 @@ func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
 
 	var loginResp LoginResponse
 	err = json.NewDecoder(resp.Body).Decode(&loginResp)
-	// Assert that the response was successful
 	assert.NoError(t, err, "Should decode response")
+
+	// LOG response if status is not 200
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Login Response:", loginResp)
+	}
+	// Assert response structure
+	assert.NotEmpty(t, loginResp.ID, "ID should not be empty")
+	assert.Equal(t, user.Name, loginResp.Name, "Name should match")
+	assert.Equal(t, user.Username, loginResp.Username, "Username should match")
+	assert.Equal(t, user.Email, loginResp.Email, "Email should match")
+	assert.Equal(t, user.UserType, loginResp.UserType, "UserType should match")
+	assert.NotEmpty(t, loginResp.Token, "Token should not be empty")
+	assert.Nil(t, loginResp.Password, "Password should be null")
+	assert.NotEmpty(t, loginResp.UserID, "UserID should not be empty")
+
+	// Assert JWT token format (basic check)
+	assert.True(t, strings.HasPrefix(loginResp.Token, "eyJ"), "Token should be in JWT format")
+
+	// Assert timestamps
+	assert.False(t, loginResp.UpdatedAt.IsZero(), "UpdatedAt should not be zero")
+
 	// Assert status code
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Should return 200 OK")
 
