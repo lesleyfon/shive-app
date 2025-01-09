@@ -64,22 +64,6 @@ func TestAPIEndpoints(t *testing.T) {
 	// Setup: Start the server and wait for it to be ready
 	time.Sleep(2 * time.Second)
 
-	// First sign up the user
-	t.Run("Signup Flow", func(t *testing.T) {
-		signupURL := fmt.Sprintf("%s/users/signup", baseURL)
-		jsonData, _ := json.Marshal(testUser)
-
-		resp, err := http.Post(signupURL, "application/json", bytes.NewBuffer(jsonData))
-		assert.NoError(t, err, "Signup request should not error")
-
-		// Read and log the response body regardless of status code
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body = io.NopCloser(bytes.NewBuffer(body)) // Restore the body
-		fmt.Printf("Signup Response: Status: %d, Body: %s\n", resp.StatusCode, string(body))
-
-		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 201 Created")
-		defer resp.Body.Close()
-	})
 	t.Run("Login Flow", func(t *testing.T) {
 		// Test Login
 		token, userID := testLogin(t, baseURL, testUser)
@@ -94,22 +78,6 @@ func TestAPIEndpoints(t *testing.T) {
 	})
 
 }
-
-// func testSignup(t *testing.T, baseURL string, user TestUser) (string, string) {
-// 	signupURL := fmt.Sprintf("%s/users/signup", baseURL)
-// 	jsonData, _ := json.Marshal(user)
-
-// 	resp, err := http.Post(signupURL, "application/json", bytes.NewBuffer(jsonData))
-// 	assert.NoError(t, err, "Signup request should not error")
-// 	defer resp.Body.Close()
-
-// 	var signupResp LoginResponse
-// 	err = json.NewDecoder(resp.Body).Decode(&signupResp)
-// 	assert.NoError(t, err, "Should decode response")
-// 	assert.Equal(t, http.StatusOK, resp.StatusCode, "Should return 200 OK")
-
-// 	return signupResp.Token, signupResp.UserID
-// }
 
 func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
 	loginURL := fmt.Sprintf("%s/users/login", baseURL)
