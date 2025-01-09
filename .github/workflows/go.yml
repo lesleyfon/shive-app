@@ -4,10 +4,18 @@ on:
         branches: [main]
     pull_request:
         branches: [main]
+env:
+    # Add environment variable for MongoDB connection
+    MONGODB_URI: ${{ secrets.MONGODB_URI }}
 jobs:
     build:
         name: Build
         runs-on: ubuntu-latest
+        services:
+            mongo:
+                image: mongo:latest
+                ports:
+                    - 27017:27017
         steps:
             - name: Checkout to build
               uses: actions/checkout@v2
@@ -27,3 +35,17 @@ jobs:
               id: Build-Code
               run: |
                   go build -v .
+
+            - name: Run  auth tests
+              run: go test -v ./test/auth_test.go
+
+            # Added jq installation since the shell script uses it to parse JSON
+            # - name: Install jq
+            #   run: sudo apt-get install -y jq
+
+            # # Make the test script executable and run it
+            # - name: Make API test script executable
+            #   run: chmod +x api-test.shell
+
+            # - name: Run API tests
+            #   run: ./api-test.shell
