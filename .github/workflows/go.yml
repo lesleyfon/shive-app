@@ -68,3 +68,7 @@ jobs:
 
             # - name: Run API tests
             #   run: ./api-test.shell
+
+            - name: Get Runner IP
+              run: |
+                  curl -s https://api.ipify.org
