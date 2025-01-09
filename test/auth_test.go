@@ -63,22 +63,23 @@ func TestAPIEndpoints(t *testing.T) {
 	// Setup: Start the server and wait for it to be ready
 	time.Sleep(2 * time.Second)
 
-	// t.Run("Signup and Login Flow", func(t *testing.T) {
-	// 	// Test Signup
-	// 	token, userID := testSignup(t, baseURL, testUser)
-	// 	assert.NotEmpty(t, token, "Token should not be empty")
-	// 	assert.NotEmpty(t, userID, "UserID should not be empty")
+	// First sign up the user
+	t.Run("Signup Flow", func(t *testing.T) {
+		signupURL := fmt.Sprintf("%s/users/signup", baseURL)
+		jsonData, _ := json.Marshal(testUser)
 
-	// 	// Test Get User Details
-	// 	t.Run("Get User Details", func(t *testing.T) {
-	// 		testGetUserDetails(t, baseURL, token, userID)
-	// 	})
+		resp, err := http.Post(signupURL, "application/json", bytes.NewBuffer(jsonData))
 
-	// Test Get All Users
-	// t.Run("Get All Users", func(t *testing.T) {
-	// 	testGetAllUsers(t, baseURL, token)
-	// })
-	// })
+		// LOG response if status is not 201
+		if resp.StatusCode != http.StatusCreated {
+			fmt.Println("Signup Response errored out:", resp)
+		}
+
+		assert.NoError(t, err, "Signup request should not error")
+		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 201 Created")
+
+		defer resp.Body.Close()
+	})
 	t.Run("Login Flow", func(t *testing.T) {
 		// Test Login
 		token, userID := testLogin(t, baseURL, testUser)
