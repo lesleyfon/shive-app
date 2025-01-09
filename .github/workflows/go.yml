@@ -31,6 +31,12 @@ jobs:
                       dep ensure
                   fi
 
+            - name: Create .env file
+              run: |
+                  echo "PORT=9000" >> .env
+                  echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
+                  echo "ENV=production" >> .env
+
             - name: Build Code
               id: Build-Code
               run: |
