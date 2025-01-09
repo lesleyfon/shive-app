@@ -36,7 +36,13 @@ jobs:
               run: |
                   go build -v .
 
+            - name: Start API Server
+              run: |
+                  ./shive
+                  sleep 10
             - name: Run  auth tests
+              env:
+                  API_URL: http://localhost:9000
               run: go test -v ./test/auth_test.go
 
             # Added jq installation since the shell script uses it to parse JSON

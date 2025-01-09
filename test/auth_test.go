@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"shive/models"
 	"testing"
 	"time"
@@ -24,11 +25,16 @@ type TestUser struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
+
 	UserType string `json:"user_type"`
 }
 
+var baseURL = os.Getenv("API_URL")
+
 func TestAPIEndpoints(t *testing.T) {
-	baseURL := "http://localhost:9000"
+	if baseURL == "" {
+		baseURL = "http://localhost:9000"
+	}
 	testUser := TestUser{
 		Name:     "Test User",
 		Username: "testuser",
