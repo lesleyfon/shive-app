@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"shive/models"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -37,6 +38,10 @@ type LoginResponse struct {
 	Message      string    `json:"message"`
 }
 
+type SignupRespone struct {
+	Data LoginResponse
+}
+
 type TestUser struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
@@ -52,11 +57,16 @@ func TestAPIEndpoints(t *testing.T) {
 	if baseURL == "" {
 		baseURL = "http://localhost:9000"
 	}
+
+	timeSinceEpoch := time.Now().UnixNano() / 1000
+	email := "test_" + strconv.Itoa(int(timeSinceEpoch)) + "@example.com"
+	username := "testuser" + strconv.Itoa(int(timeSinceEpoch))
+
 	testUser := TestUser{
 		Name:     "Test User",
-		Username: "testuser",
+		Username: username,
 		Password: "testpass123",
-		Email:    "test@example.com",
+		Email:    email,
 		UserType: "ADMIN",
 	}
 
@@ -69,6 +79,15 @@ func TestAPIEndpoints(t *testing.T) {
 	// }
 	// Setup: Start the server and wait for it to be ready
 	time.Sleep(2 * time.Second)
+
+	// First sign up the user
+	t.Run("Signup Flow", func(t *testing.T) {
+
+		token, userID := testSignup(t, baseURL, testUser)
+		assert.NotEmpty(t, token, "Token should not be empty")
+		assert.NotEmpty(t, userID, "UserID should not be empty")
+
+	})
 
 	t.Run("Login Flow", func(t *testing.T) {
 		// Test Login
@@ -83,6 +102,48 @@ func TestAPIEndpoints(t *testing.T) {
 
 	})
 
+}
+
+func testSignup(t *testing.T, baseURL string, user TestUser) (string, string) {
+	signupURL := fmt.Sprintf("%s/users/signup", baseURL)
+	jsonData, _ := json.Marshal(user)
+
+	req, err := http.NewRequest("POST", signupURL, bytes.NewBuffer(jsonData))
+	assert.NoError(t, err, "Sign Up request should not error")
+
+	// Set the content type header
+	req.Header.Set("Content-Type", "application/json")
+
+	// Create a new client
+	client := &http.Client{}
+
+	// Send the request
+	resp, err := client.Do(req)
+	assert.NoError(t, err, "Login request should not error")
+
+	defer resp.Body.Close()
+
+	var signupResp SignupRespone
+	err = json.NewDecoder(resp.Body).Decode(&signupResp)
+	assert.NoError(t, err, "Should decode response")
+
+	data := signupResp.Data
+
+	// Assert response structure
+	assert.Equal(t, user.Name, data.Name, "Name should match")
+	assert.Equal(t, user.Username, data.Username, "Username should match")
+	assert.Equal(t, user.Email, data.Email, "Email should match")
+	assert.Equal(t, user.UserType, data.UserType, "UserType should match")
+	assert.NotEmpty(t, data.Token, "Token should not be empty")
+	assert.Nil(t, data.Password, "Password should be null")
+	assert.NotEmpty(t, data.UserID, "UserID should not be empty")
+
+	// Assert JWT token format (basic check)
+	assert.True(t, strings.HasPrefix(data.Token, "eyJ"), "Token should be in JWT format")
+
+	// Assert status code
+	assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 200 OK")
+	return data.Token, data.UserID
 }
 
 func testLogin(t *testing.T, baseURL string, user TestUser) (string, string) {
