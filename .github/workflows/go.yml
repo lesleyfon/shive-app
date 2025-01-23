@@ -19,9 +19,7 @@ jobs:
         steps:
             - name: Checkout to build
               uses: actions/checkout@v2
-            - name: Get Runner IP
-              run: |
-                  curl -s https://api.ipify.org
+
             - name: Install go and run linting
               id: Install-go
               uses: reviewdog/action-golangci-lint@v2
@@ -40,6 +38,7 @@ jobs:
                   echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
                   echo "ENV=production" >> .env
                   echo "MONGOURI=${{ secrets.MONGODB_URI }}" >> .env
+                  echo "MONGO_DATABASE_NAME=shive-api-test" >> .env
 
             - name: Build Code
               id: Build-Code
@@ -60,14 +59,3 @@ jobs:
               env:
                   API_URL: http://localhost:9000
               run: go test -v ./test/auth_test.go
-
-            # Added jq installation since the shell script uses it to parse JSON
-            # - name: Install jq
-            #   run: sudo apt-get install -y jq
-
-            # # Make the test script executable and run it
-            # - name: Make API test script executable
-            #   run: chmod +x api-test.shell
-
-            # - name: Run API tests
-            #   run: ./api-test.shell

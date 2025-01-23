@@ -44,6 +44,7 @@ func StartDB() *mongo.Client {
 var Client *mongo.Client = StartDB()
 
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	var collection *mongo.Collection = client.Database("shive-api").Collection(collectionName)
+	MONGO_DB_NAME := os.Getenv("MONGO_DATABASE_NAME")
+	var collection *mongo.Collection = client.Database(MONGO_DB_NAME).Collection(collectionName)
 	return collection
 }
